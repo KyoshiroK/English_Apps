@@ -1,0 +1,10 @@
+name = "english-quick-answer-api"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# GitHub Pagesのオリジン。リポジトリのパスは含めません。
+ALLOWED_ORIGIN = "https://YOUR-USERNAME.github.io"
+MODEL = "gpt-4.1-mini"
+TRANSCRIBE_MODEL = "gpt-transcribe"
+# OPENAI_API_KEY / APP_TOKEN はここに記載せず wrangler secret put で設定します。

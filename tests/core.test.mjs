@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {makeBody,photoParts,consumeSSE} from '../core.js';
+const enc=new TextEncoder();
+const stream=(chunks)=>new ReadableStream({start(c){for(const s of chunks)c.enqueue(typeof s==='string'?enc.encode(s):s);c.close();}});
+const event=(e)=>'data: '+JSON.stringify(e)+'\r\n\r\n';
+test('SSE survives UTF-8 and CRLF fragmented into single bytes',async()=>{const bytes=enc.encode(event({type:'response.output_text.delta',delta:'B. goes。正解'})+event({type:'response.completed'}));let out='';await consumeSSE(stream([...bytes].map(b=>new Uint8Array([b]))),d=>out+=d);assert.equal(out,'B. goes。正解');});
+test('truncation cannot be reported as success',async()=>{await assert.rejects(consumeSSE(stream([event({type:'response.output_text.delta',delta:'B'})]),()=>{}),/途中/);});
+test('incomplete and failed streams surface errors',async()=>{for(const type of ['response.incomplete','response.failed','error'])await assert.rejects(consumeSSE(stream([event({type,message:'bad'})]),()=>{}));});
+test('photo marker parser supports incremental answer/transcript',()=>{assert.deepEqual(photoParts('[ANSWER]\nB. goes\n[TRANSCRIPT]\nShe ___\n[REASON]\n三人称単数。'),{answer:'B. goes',transcript:'She ___',reason:'三人称単数。'});assert.equal(photoParts('[ANSWER]\nB\n[TRAN').answer,'B');});
+test('image and text travel in one request, storage disabled',()=>{const body=makeBody({model:'gpt-4.1-mini',task:'photo',image:'data:image/jpeg;base64,AA=='});assert.equal(body.input[0].content.length,2);assert.equal(body.store,false);assert.equal(body.stream,true);assert.equal(body.input[0].content[1].detail,'high');});

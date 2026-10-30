@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {SilenceGate} from '../recorder.js';
+test('silence only stops after sustained speech',()=>{const g=new SilenceGate({silenceMs:1800});for(let t=100;t<=500;t+=100)assert.equal(g.update(t,.04,true),'');assert.equal(g.update(2200,0,true),'');assert.equal(g.update(2300,0,true),'silence');});
+test('disabled auto mode waits for stop or maximum duration',()=>{const g=new SilenceGate();for(let t=100;t<=500;t+=100)g.update(t,.04,false);assert.equal(g.update(5000,0,false),'');assert.equal(g.update(60000,0,false),'limit');});
+test('brief noise is not sufficient speech and no-speech timeout is bounded',()=>{const g=new SilenceGate();g.update(100,.04,true);assert.equal(g.update(2000,0,true),'');assert.equal(g.update(15000,0,true),'empty');});

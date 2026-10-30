@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://api.openai.com https://*.workers.dev; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="theme-color" content="#156450"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Quick Answer"><link rel="apple-touch-icon" href="./icon.png"><link rel="manifest" href="./manifest.webmanifest">
+<title>English Quick Answer</title><link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header><a class="brand" href="./"><span class="brand-mark">Q</span><span>English Quick Answer<small>LISTEN · CAPTURE · UNDERSTAND</small></span></a><button id="settingsOpen" class="secondary">接続・設定</button></header>
+<main>
+<div class="intro"><div><span class="eyebrow">YOUR ENGLISH WORKSPACE</span><h1>質問から、答えまで。すばやく。</h1><p>英語の問題と選択肢を、音声・写真から読み取ります。</p></div><span id="connectionState" class="badge">API未接続</span></div>
+<nav class="mode-switch" aria-label="入力モード"><button id="modeVoice" aria-pressed="true">01　音声で質問</button><button id="modeDual" aria-pressed="false">02　写真 ＋ 音声</button><span>iPhone Safari 対応</span></nav>
+<div id="layoutTools" class="layout-tools" hidden><span>写真と音声を左右に表示</span><button id="layoutToggle" class="quiet">上下表示に切替</button></div>
+<div id="workspace" class="workspace">
+<section id="photoPanel" class="panel" hidden aria-labelledby="photoTitle">
+<div class="panel-heading"><div><span class="eyebrow">CAPTURE</span><h2 id="photoTitle">写真から読み取る</h2></div><span class="step">01</span></div>
+<p class="muted">問題と選択肢が読めるよう、大きく撮影してください。</p>
+<div class="toolbar"><button id="cameraOpen" class="secondary">カメラを起動</button><label class="button secondary" for="imageFile">写真を選択 / 撮影</label><input id="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" hidden></div>
+<div id="cameraBox" hidden><video id="camera" autoplay muted playsinline></video><div class="toolbar"><button id="capture">この画面を撮影</button><button id="cameraClose" class="secondary">閉じる</button></div></div>
+<div id="previewBox" class="preview" hidden><img id="preview" alt="読み取り対象の問題写真"><button id="removeImage" class="secondary">写真を解除</button></div>
+<label class="check"><input id="photoAuto" type="checkbox" checked>写真を選んだら文字起こし＋回答</label>
+<label for="photoText">読み取った問題・選択肢（修正できます）</label><textarea id="photoText" rows="6" placeholder="写真の文字起こしがここに表示されます。手入力もできます。"></textarea>
+<div class="toolbar"><button id="photoSolve">写真を読み取り＋回答</button><button id="ocrOnly" class="secondary">文字起こしのみ</button><button id="photoTextSolve" class="secondary">修正文で回答</button><button id="photoCancel" class="quiet" disabled>中止</button></div>
+<div class="result"><div class="result-top"><span class="eyebrow">PHOTO ANSWER</span><span id="photoTiming" class="timing">待機中</span></div><div id="photoAnswer" class="answer" aria-live="polite">写真の回答がここに表示されます。</div><p id="photoStatus" class="status" role="status">写真を選択してください。</p></div>
+</section>
+<section id="voicePanel" class="panel" aria-labelledby="voiceTitle">
+<div class="panel-heading"><div><span class="eyebrow">LISTEN</span><h2 id="voiceTitle">音声から回答する</h2></div><span id="micBadge" class="badge">マイク停止中</span></div>
+<p class="muted">問題文とすべての選択肢を読み上げてください。</p>
+<div class="toolbar"><button id="micStart" class="mic">●　音声認識を開始</button><button id="micStop" class="secondary" disabled>停止して回答</button><button id="voiceClear" class="quiet">新しい問題</button></div>
+<label for="voiceEngine">音声入力方式</label><select id="voiceEngine"><option value="record">iPhone推奨：録音 → AI文字起こし</option><option value="browser">高速：ブラウザのリアルタイム認識</option></select><p id="engineHint" class="muted">録音方式は無音または停止ボタンで文字起こし・回答します。録音中の文字起こしは表示されません。</p>
+<div class="voice-options"><label class="check"><input id="autoVoice" type="checkbox" checked>無音後に自動回答</label><label>待ち時間 <select id="silence"><option value="1200">1.2秒</option><option value="1800" selected>1.8秒</option><option value="3000">3秒</option><option value="5000">5秒</option></select></label><label>認識言語（ブラウザ） <select id="speechLang"><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="ja-JP">日本語</option></select></label></div>
+<label for="voiceText">問題文・選択肢</label><textarea id="voiceText" rows="8" placeholder="例: Which word best completes the sentence? She ___ to school every day. A. go  B. goes  C. going  D. gone"></textarea>
+<p id="interim" class="interim" aria-live="polite"></p>
+<label class="check" id="photoContextLabel" hidden><input id="usePhoto" type="checkbox">左の問題文も音声の回答に使用する</label>
+<div class="toolbar"><button id="voiceSolve">この問題に回答</button><button id="voiceCancel" class="quiet" disabled>中止</button><button id="sample" class="quiet">サンプルを入力</button></div>
+<div class="result"><div class="result-top"><span class="eyebrow">QUICK ANSWER</span><span id="voiceTiming" class="timing">待機中</span></div><div id="voiceAnswer" class="answer" aria-live="polite">回答がここに表示されます。</div><p id="voiceStatus" class="status" role="status">音声認識または手入力で開始できます。</p></div>
+</section>
+</div>
+<p class="footnote">録音方式の音声・問題文・写真は設定したAIサービスに送信されます。リアルタイム認識はブラウザの認識サービスを使います。無音判定で途中送信される場合は、待ち時間を延ばすか自動回答をオフにしてください。</p>
+</main>
+<dialog id="settings"><form id="settingsForm"><div class="panel-heading"><h2>接続・設定</h2><button id="settingsClose" type="button" class="quiet" aria-label="設定を閉じる">✕</button></div>
+<p class="muted">初回のみ設定が必要です。APIキー・接続パスワードはメモリ内だけで保持し、再読み込みで消去します。</p>
+<label for="connectionMode">接続方法</label><select id="connectionMode"><option value="direct">個人用：OpenAIへ直接接続</option><option value="proxy">中継サーバー経由（同梱Worker）</option></select>
+<div id="directFields"><label for="apiKey">OpenAI APIキー</label><input id="apiKey" type="password" autocomplete="off" placeholder="sk-…（設定済みなら空欄で維持）"><p class="muted">自分の端末用。共有PCでは利用後に「認証情報を消去」を押してください。ChatGPTの契約とは別にAPI利用料金がかかります。</p></div>
+<div id="proxyFields" hidden><label for="proxyUrl">WorkerのURL</label><input id="proxyUrl" type="url" placeholder="https://english-answer.example.workers.dev"><label for="proxyToken">接続パスワード</label><input id="proxyToken" type="password" autocomplete="off" placeholder="WorkerのAPP_TOKEN（空欄で維持）"></div>
+<label for="transcribeModel">録音用の文字起こしモデル</label><input id="transcribeModel" value="gpt-transcribe" required pattern="[a-zA-Z0-9._-]+"><p class="muted">音声はMP4/AAC等で送信。中継時はサーバーのTRANSCRIBE_MODELを使用します。</p>
+<label for="model">モデルID</label><input id="model" value="gpt-4.1-mini" required pattern="[a-zA-Z0-9._-]+"><p class="muted">初期値は画像にも対応する gpt-4.1-mini。利用権限のあるResponses API対応モデルを指定してください。中継時はサーバーの設定が優先されます。</p>
+<div class="settings-grid"><div><label for="imageSize">写真の長辺</label><select id="imageSize"><option value="1280">1280px · 転送軽量</option><option value="1600" selected>1600px · バランス</option><option value="2048">2048px · 小さい文字</option></select></div><div><label for="answerStyle">回答量</label><select id="answerStyle"><option value="short">答え＋短い理由</option><option value="answer">答えのみ</option></select></div></div>
+<p id="settingsMessage" class="status" role="status"></p><div class="toolbar"><button type="submit">設定を適用</button><button id="forget" type="button" class="secondary">認証情報を消去</button></div></form></dialog>
+<script type="module" src="./app.js"></script>
+</body></html>
